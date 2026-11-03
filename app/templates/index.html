@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090c"><title>GrooveCatch Web</title>
+  <link rel="icon" type="image/png" href="/static/groovecatch-icon.png">
+  <link rel="stylesheet" href="/static/css/app.css">
+<script>window.GROOVECATCH_CLOUD = {{ "true" if cloud_mode else "false" }};</script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="GrooveCatch início"><img class="brand-logo" src="/static/groovecatch-icon.png" alt=""> GrooveCatch <span class="brand-tag">WEB</span></a><nav class="top-nav"><a href="#results-section">Buscar</a><a href="#downloads-section">Downloads</a><a href="#history-list">Histórico</a><a href="#radios-section">Rádios</a><a href="#tools-section">Ferramentas</a></nav></header>
+  <main class="shell">
+    {% with ad=ad_top %}{% if ad %}<aside class="network-ad" aria-label="Publicidade"><span class="network-ad-label">PUBLICIDADE · {{ ad.kind|upper }}</span><div class="network-ad-body">{% if ad.image_url %}<img src="{{ ad.image_url }}" loading="lazy" alt="Imagem publicitária" referrerpolicy="no-referrer">{% endif %}<div><strong>{{ ad.title }}</strong>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}<a href="{{ url_for('advertising.outbound', ad_id=ad.id) }}" rel="sponsored nofollow noopener noreferrer" target="_blank">Conhecer anunciante ↗</a></div></div></aside>{% endif %}{% endwith %}
+    <section class="hero"><div class="eyebrow"><span></span> SUA MÚSICA, DO SEU JEITO</div><h1>Encontre. Organize.<br><em>Leve com você.</em></h1><p>Spotify, YouTube e outras redes. Cole um link ou pesquise pelo nome.</p></section>
+    <section class="panel input-panel"><form id="smart-form"><label for="smart-input">BUSCA UNIVERSAL</label><div class="input-row"><span class="search-icon">⌕</span><input id="smart-input" autocomplete="off" placeholder="Música, artista, álbum, playlist ou cole um link..." required><button id="resolve-button" type="submit">Identificar <span>→</span></button></div><div class="input-foot"><span>Spotify · YouTube · Instagram · TikTok · Facebook · X · SoundCloud · Vimeo · Twitch · outros sites compatíveis</span><span id="smart-status" role="status">Pronto para começar. Spotify não exige Client ID/Secret.</span></div></form>
+      <div class="format-row"><div><label for="format-select">FORMATO DE SAÍDA</label><p>As opções são ajustadas depois que a mídia é identificada.</p></div><select id="format-select" disabled><option value="auto">Automático · identifique primeiro</option></select></div>
+    </section>
+
+    {% if sponsored_items %}
+    <section class="sponsors-section" aria-labelledby="sponsors-title">
+      <div class="sponsors-header"><div><div class="eyebrow">PUBLICIDADE</div><h2 id="sponsors-title">Ofertas dos nossos parceiros</h2></div><span>Links externos patrocinados</span></div>
+      <div class="sponsors-grid">
+        {% for item in sponsored_items %}
+        <article class="sponsor-card">
+          <span class="sponsor-label">Publicidade · Patrocinado</span>
+          <h3>{{ item.title }}</h3>
+          {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+          <a href="{{ item.url }}" target="_blank" rel="sponsored nofollow noopener noreferrer">Conhecer oferta <span aria-hidden="true">↗</span></a>
+        </article>
+        {% endfor %}
+      </div>
+      <p class="sponsors-disclosure">Alguns links podem gerar comissão para o GrooveCatch, sem custo adicional por clicar. Preços e condições são definidos pelos parceiros. O GrooveCatch não endossa automaticamente os produtos anunciados.</p>
+    </section>
+    {% endif %}
+    {% with ad=ad_content %}{% if ad %}<aside class="network-ad" aria-label="Publicidade"><span class="network-ad-label">PUBLICIDADE · {{ ad.kind|upper }}</span><div class="network-ad-body">{% if ad.image_url %}<img src="{{ ad.image_url }}" loading="lazy" alt="Imagem publicitária" referrerpolicy="no-referrer">{% endif %}<div><strong>{{ ad.title }}</strong>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}<a href="{{ url_for('advertising.outbound', ad_id=ad.id) }}" rel="sponsored nofollow noopener noreferrer" target="_blank">Conhecer anunciante ↗</a></div></div></aside>{% endif %}{% endwith %}
+    <section class="section" id="results-section"><div class="section-heading"><div><div class="eyebrow">PASSO 02</div><h2>Resultados</h2></div><span class="section-note">Confira a correspondência antes de baixar</span></div><div id="results" class="result-list"><div class="empty-state"><span>♫</span><strong>Suas opções aparecerão aqui</strong><small>Identifique uma faixa para ver os resultados.</small></div></div></section>
+    <section class="section" id="downloads-section"><div class="section-heading"><div><div class="eyebrow">PASSO 03</div><h2>Fila de downloads</h2></div><span class="section-note">Progresso e estado em tempo real</span></div><div id="jobs" class="job-list"><div class="empty-state compact"><strong>Nenhum download iniciado</strong><small>Ao concluir, o navegador tentará iniciar o salvamento automaticamente.</small></div></div></section>
+    <section class="section" id="radios-section"><div class="section-heading"><div><div class="eyebrow">AO VIVO</div><h2>Rádios</h2></div><span class="section-note">Ouça rádios e leve a música atual para a Busca Universal</span></div>
+      <div class="radio-toolbar"><div class="radio-search"><input id="radio-query" placeholder="Digite uma rádio, cidade, estado, país ou gênero..." aria-label="Pesquisa de rádios"><select id="radio-field" aria-label="Tipo de pesquisa"><option value="auto">Automático</option><option value="name">Emissora</option><option value="city">Cidade</option><option value="state">Estado</option><option value="country">País</option><option value="tag">Gênero</option></select><button id="radio-search-button">Buscar</button></div><button id="nearby-radios" class="text-button">⌖ Rádios perto de mim</button><button id="favorite-radios" class="text-button">☆ Favoritas</button><span id="radio-status" class="muted">A localização só será solicitada ao clicar no botão.</span></div>
+      <div id="radio-results" class="radio-grid"><div class="empty-state compact"><strong>Explore rádios ao vivo</strong><small>Pesquise uma emissora ou use sua localização para sugestões próximas.</small></div></div>
+      <div id="radio-player" class="radio-player" hidden><div><span class="eyebrow">TOCANDO AGORA</span><strong id="radio-now-name">Rádio</strong><small id="radio-now-place"></small><small id="radio-now-track" class="now-track"></small></div><audio id="radio-audio" controls preload="none"></audio><button id="radio-find-song" class="text-button" title="Use quando a rádio exibir artista e música no player/stream">🔎 Buscar música atual</button></div>
+    </section>
+    <section class="section" id="tools-section"><div class="section-heading"><div><div class="eyebrow">CENTRAL MULTIMÍDIA</div><h2>Seu estúdio de mídia</h2></div><span class="section-note">Ferramentas locais · FFmpeg</span></div>
+      <p class="tools-intro">Escolha uma categoria para converter, editar ou exportar seus arquivos. O original permanece intacto.</p>
+      <div class="tool-tabs" role="tablist" aria-label="Categorias de ferramentas">
+        <button type="button" class="tool-tab active" id="tab-audio" role="tab" aria-selected="true" aria-controls="tool-panel-audio" data-tool-tab="audio"><span aria-hidden="true">♫</span> Áudio</button>
+        <button type="button" class="tool-tab" id="tab-video" role="tab" aria-selected="false" aria-controls="tool-panel-video" data-tool-tab="video"><span aria-hidden="true">▣</span> Vídeo</button>
+        <button type="button" class="tool-tab" id="tab-image" role="tab" aria-selected="false" aria-controls="tool-panel-image" data-tool-tab="image"><span aria-hidden="true">▧</span> Imagens e GIF</button>
+        <button type="button" class="tool-tab" id="tab-metadata" role="tab" aria-selected="false" aria-controls="tool-panel-metadata" data-tool-tab="metadata"><span aria-hidden="true">≡</span> Metadados</button>
+      </div>
+      <div class="tool-panel" id="tool-panel-audio" role="tabpanel" aria-labelledby="tab-audio">
+      <div class="tool-category-title"><strong>Áudio</strong><span>Converta, recorte, normalize ou processe em lote.</span></div>
+      <form id="audio-convert-form" class="media-tools-form"><label for="audio-file">Converter arquivo de áudio</label><div class="media-tools-row"><input id="audio-file" type="file" accept=".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,audio/*" required><select id="audio-target" aria-label="Formato de saída"><option value="mp3">MP3</option><option value="wav">WAV</option><option value="flac">FLAC</option></select><button type="submit" id="audio-convert-button">Converter e salvar</button></div><small>Arquivo máximo: 100 MB. A conversão ocorre no servidor do GrooveCatch.</small><p id="audio-convert-status" role="status" class="muted"></p></form><form id="media-tools-form" class="media-tools-form" style="margin-top:20px">
+<label for="media-operation">Outras ferramentas de áudio e vídeo</label>
+<div class="media-tools-row">
+<select id="media-operation" aria-label="Operação"><option value="trim">Cortar áudio</option><option value="extract">Extrair áudio de vídeo</option><option value="normalize">Normalizar volume</option><option value="batch">Converter vários áudios em ZIP</option></select>
+<input id="media-files" type="file" accept=".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus" required>
+<select id="media-format" aria-label="Formato"><option value="mp3">MP3</option><option value="wav">WAV</option><option value="flac">FLAC</option></select>
+</div>
+<div class="media-tools-row" id="trim-options"><label>Início (segundos) <input id="trim-start" type="number" min="0" value="0" step="0.1"></label><label>Fim (segundos) <input id="trim-end" type="number" min="0.1" value="30" step="0.1"></label></div>
+<div class="media-tools-row"><button id="media-tools-button" type="submit">Processar e salvar</button></div>
+<small>Até {{ 3 if cloud_mode else 20 }} arquivos no lote, máximo de 100 MB por requisição. Arquivos processados localmente. A prévia do arquivo original aparece abaixo.</small>
+<audio id="media-tools-preview" controls style="width:100%;margin-top:10px"></audio>
+<p id="media-tools-status" role="status" class="muted"></p>
+</form></div><div class="tool-panel" id="tool-panel-video" role="tabpanel" aria-labelledby="tab-video" hidden><div class="tool-category-title"><strong>Vídeo</strong><span>Compacte ou corte vídeos e exporte em MP4.</span></div><form id="video-tools-form" class="media-tools-form" style="margin-top:20px">
+  <label for="video-operation">Ferramentas de vídeo</label>
+  <div class="media-tools-row">
+    <select id="video-operation" aria-label="Operação de vídeo"><option value="compress">Comprimir vídeo</option><option value="trim">Cortar vídeo</option></select>
+    <input id="video-file" type="file" accept=".mp4,.mkv,.webm,.mov,.avi" required>
+    <select id="video-preset" aria-label="Compressão"><option value="leve">Leve (mais qualidade)</option><option value="equilibrada" selected>Equilibrada</option><option value="alta">Alta (arquivo menor)</option></select>
+  </div>
+  <div class="media-tools-row" id="video-trim-options" hidden>
+    <label>Início (segundos) <input id="video-start" type="number" min="0" step="0.1" value="0"></label>
+    <label>Fim (segundos) <input id="video-end" type="number" min="0.1" step="0.1" value="30"></label>
+  </div>
+  <div class="media-tools-row"><button type="submit" id="video-submit">Processar vídeo e salvar</button></div>
+  <small>Até {{ 100 if cloud_mode else 500 }} MB por vídeo. Saída MP4 (H.264/AAC). Compressão não garante arquivo menor para toda origem.</small>
+  <video id="video-preview" controls playsinline style="width:100%;max-height:280px;margin-top:10px"></video>
+  <p id="video-status" role="status" class="muted"></p>
+</form></div><div class="tool-panel" id="tool-panel-image" role="tabpanel" aria-labelledby="tab-image" hidden><div class="tool-category-title" id="advanced-category-title"><strong>Imagens, GIF e metadados</strong><span>Capture quadros, crie GIFs ou edite informações de áudio.</span></div>
+<form id="advanced-tools-form" class="media-tools-form" style="margin-top:20px">
+  <label for="advanced-operation">Imagens, GIFs e metadados</label>
+  <div class="media-tools-row">
+    <select id="advanced-operation"><option value="frame">Capturar imagem do vídeo</option><option value="gif">Criar GIF animado</option><option value="metadata">Editar metadados de áudio</option></select>
+    <input id="advanced-file" type="file" accept=".mp4,.mkv,.webm,.mov,.avi" required>
+    <select id="advanced-format"><option value="jpg">JPG</option><option value="png">PNG</option></select>
+  </div>
+  <div id="advanced-time" class="media-tools-row"><label>Início (segundos) <input id="advanced-start" type="number" value="0" min="0" step="0.1"></label><label id="advanced-end-label" hidden>Fim (segundos) <input id="advanced-end" type="number" value="3" min="0.1" step="0.1"></label></div>
+  <div id="advanced-metadata" class="media-tools-row" hidden>
+    <input id="advanced-title" placeholder="Título" maxlength="200"><input id="advanced-artist" placeholder="Artista" maxlength="200"><input id="advanced-album" placeholder="Álbum" maxlength="200"><input id="advanced-date" placeholder="Ano" maxlength="200"><input id="advanced-genre" placeholder="Gênero" maxlength="200">
+  </div>
+  <button id="advanced-submit" type="submit">Processar e salvar</button>
+  <small>GIF: máximo 15 segundos, 480 px de largura. Metadados: MP3, FLAC, M4A ou OGG. Arquivos originais preservados. Até {{ 100 if cloud_mode else 500 }} MB por arquivo.</small>
+  <video id="advanced-preview" controls playsinline style="width:100%;max-height:280px;margin-top:10px"></video>
+  <p id="advanced-status" role="status" class="muted"></p>
+</form></div>
+    </section>
+    <section class="lower-grid"><div class="section mini-section"><div class="section-heading"><div><div class="eyebrow">REGISTROS</div><h2>Histórico</h2></div><button id="refresh-history" class="text-button">Atualizar ↻</button></div><div id="history-list" class="history-list"><span class="muted">Carregando histórico...</span></div></div>
+    <div class="section mini-section"><div class="section-heading"><div><div class="eyebrow">REDE</div><h2>Conexão e desempenho</h2></div><button id="refresh-connection" class="text-button">Atualizar ↻</button></div><div id="connection-list" class="diagnostic-list"><span class="muted">Verificando conexão...</span></div><details class="technical-details"><summary>Detalhes técnicos</summary><div id="diagnostic-list" class="diagnostic-list"><span class="muted">Verificando dependências...</span></div><button id="refresh-diagnostics" class="text-button">Verificar dependências ↻</button></details></div></section>
+    <footer><span>GrooveCatch Cloud · v1.11.1</span><span>Use somente conteúdos que você tenha direito de baixar e respeite os termos das plataformas.</span></footer>
+    {% with ad=ad_footer %}{% if ad %}<aside class="network-ad" aria-label="Publicidade"><span class="network-ad-label">PUBLICIDADE · {{ ad.kind|upper }}</span><div class="network-ad-body">{% if ad.image_url %}<img src="{{ ad.image_url }}" loading="lazy" alt="Imagem publicitária" referrerpolicy="no-referrer">{% endif %}<div><strong>{{ ad.title }}</strong>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}<a href="{{ url_for('advertising.outbound', ad_id=ad.id) }}" rel="sponsored nofollow noopener noreferrer" target="_blank">Conhecer anunciante ↗</a></div></div></aside>{% endif %}{% endwith %}
+  </main><script src="/static/js/app.js" defer></script>
+</body></html>
