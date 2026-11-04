@@ -1,0 +1,1 @@
+GrooveCatch Web v1.9.1: suporte a playlists YouTube com listagem, seleção, downloads individuais e ZIP de até 500 vídeos. Link com v= e list= abre playlist, com opção de baixar só o vídeo. Requer yt-dlp e FFmpeg.

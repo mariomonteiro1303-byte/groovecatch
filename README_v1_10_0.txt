@@ -1,0 +1,1 @@
+GrooveCatch Web v1.10.0 - atualização visual\nBase: v1.9.1 aprovada pelo usuário.\nNovidades: abas acessíveis para Áudio, Vídeo, Imagens/GIF e Metadados; formulários redesenhados; responsividade; foco de teclado.\nEscopo: visual. Progresso real, fila unificada e cancelamento NÃO foram implementados nesta versão.\n

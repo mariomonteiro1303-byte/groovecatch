@@ -98,3 +98,6 @@ body{background:radial-gradient(ellipse 80% 520px at 50% -150px,#223327 0%,trans
 .network-ad-body strong{font-size:15px}.network-ad-body p{font-size:12px;color:#b8c6b7;margin:5px 0}
 .network-ad-body a{color:#b9f77d;font-size:12px;font-weight:bold}
 @media(max-width:500px){.network-ad-body{align-items:start}.network-ad-body img{width:75px}}
+
+/* Identidade institucional v1.11.3 */
+.identity-section{margin:38px 0 22px;padding:28px;border:1px solid rgba(163,230,53,.2);border-radius:18px;background:linear-gradient(135deg,rgba(163,230,53,.07),rgba(255,255,255,.01))}.identity-section h2{margin:8px 0 12px}.identity-section p{max-width:800px;line-height:1.7}.identity-links{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px}.identity-links a,.institutional-page a{color:#a3e635}.institutional-page{max-width:900px;padding-top:55px;padding-bottom:90px}.institutional-page h1{font-size:clamp(2rem,5vw,3.5rem);margin:14px 0 28px}.institutional-page h2{margin-top:30px}.institutional-page p{line-height:1.8;color:#cbd5d1;max-width:760px}

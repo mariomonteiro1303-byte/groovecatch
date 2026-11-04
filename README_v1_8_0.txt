@@ -1,0 +1,1 @@
+GrooveCatch Web v1.8.0\nNovidades: compressão de vídeo e corte de vídeo com FFmpeg. Saída MP4 H.264/AAC. Até 500 MB por arquivo.\nOutras ferramentas permanecem disponíveis.\n

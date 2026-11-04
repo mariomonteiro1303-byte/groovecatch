@@ -7,11 +7,11 @@ services:
     envVars:
       - key: GROOVECATCH_CLOUD
         value: "1"
-      - key: GROOVECATCH_ACCESS_USER
-        value: admin
-      - key: GROOVECATCH_ACCESS_PASSWORD
-        sync: false
       - key: GROOVECATCH_SECRET_KEY
         generateValue: true
       - key: GROOVECATCH_ADS_ADMIN_PASSWORD
         sync: false
+      - key: GROOVECATCH_DEVELOPER_NAME
+        value: Equipe GrooveCatch
+      - key: GROOVECATCH_CONTACT_EMAIL
+        value: ""

@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#08090c"><title>GrooveCatch Web</title>
+  <meta name="theme-color" content="#08090c"><title>GrooveCatch | Ferramentas multimídia online</title><meta name="description" content="GrooveCatch: ferramentas de áudio, vídeo e conversão de arquivos online. Projeto independente de tecnologia.">
   <link rel="icon" type="image/png" href="/static/groovecatch-icon.png">
   <link rel="stylesheet" href="/static/css/app.css">
 <script>window.GROOVECATCH_CLOUD = {{ "true" if cloud_mode else "false" }};</script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/" aria-label="GrooveCatch início"><img class="brand-logo" src="/static/groovecatch-icon.png" alt=""> GrooveCatch <span class="brand-tag">WEB</span></a><nav class="top-nav"><a href="#results-section">Buscar</a><a href="#downloads-section">Downloads</a><a href="#history-list">Histórico</a><a href="#radios-section">Rádios</a><a href="#tools-section">Ferramentas</a></nav></header>
+  <header class="topbar"><a class="brand" href="/" aria-label="GrooveCatch início"><img class="brand-logo" src="/static/groovecatch-icon.png" alt=""> GrooveCatch <span class="brand-tag">WEB</span></a><nav class="top-nav"><a href="#results-section">Buscar</a><a href="#downloads-section">Downloads</a><a href="#history-list">Histórico</a><a href="#radios-section">Rádios</a><a href="#tools-section">Ferramentas</a><a href="/sobre">Sobre</a></nav></header>
   <main class="shell">
     {% with ad=ad_top %}{% if ad %}<aside class="network-ad" aria-label="Publicidade"><span class="network-ad-label">PUBLICIDADE · {{ ad.kind|upper }}</span><div class="network-ad-body">{% if ad.image_url %}<img src="{{ ad.image_url }}" loading="lazy" alt="Imagem publicitária" referrerpolicy="no-referrer">{% endif %}<div><strong>{{ ad.title }}</strong>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}<a href="{{ url_for('advertising.outbound', ad_id=ad.id) }}" rel="sponsored nofollow noopener noreferrer" target="_blank">Conhecer anunciante ↗</a></div></div></aside>{% endif %}{% endwith %}
     <section class="hero"><div class="eyebrow"><span></span> SUA MÚSICA, DO SEU JEITO</div><h1>Encontre. Organize.<br><em>Leve com você.</em></h1><p>Spotify, YouTube e outras redes. Cole um link ou pesquise pelo nome.</p></section>
@@ -40,7 +40,7 @@
       <div id="radio-results" class="radio-grid"><div class="empty-state compact"><strong>Explore rádios ao vivo</strong><small>Pesquise uma emissora ou use sua localização para sugestões próximas.</small></div></div>
       <div id="radio-player" class="radio-player" hidden><div><span class="eyebrow">TOCANDO AGORA</span><strong id="radio-now-name">Rádio</strong><small id="radio-now-place"></small><small id="radio-now-track" class="now-track"></small></div><audio id="radio-audio" controls preload="none"></audio><button id="radio-find-song" class="text-button" title="Use quando a rádio exibir artista e música no player/stream">🔎 Buscar música atual</button></div>
     </section>
-    <section class="section" id="tools-section"><div class="section-heading"><div><div class="eyebrow">CENTRAL MULTIMÍDIA</div><h2>Seu estúdio de mídia</h2></div><span class="section-note">Ferramentas locais · FFmpeg</span></div>
+    <section class="section" id="tools-section"><div class="section-heading"><div><div class="eyebrow">CENTRAL MULTIMÍDIA</div><h2>Seu estúdio de mídia</h2></div><span class="section-note">Processamento no servidor · FFmpeg</span></div>
       <p class="tools-intro">Escolha uma categoria para converter, editar ou exportar seus arquivos. O original permanece intacto.</p>
       <div class="tool-tabs" role="tablist" aria-label="Categorias de ferramentas">
         <button type="button" class="tool-tab active" id="tab-audio" role="tab" aria-selected="true" aria-controls="tool-panel-audio" data-tool-tab="audio"><span aria-hidden="true">♫</span> Áudio</button>
@@ -59,7 +59,7 @@
 </div>
 <div class="media-tools-row" id="trim-options"><label>Início (segundos) <input id="trim-start" type="number" min="0" value="0" step="0.1"></label><label>Fim (segundos) <input id="trim-end" type="number" min="0.1" value="30" step="0.1"></label></div>
 <div class="media-tools-row"><button id="media-tools-button" type="submit">Processar e salvar</button></div>
-<small>Até {{ 3 if cloud_mode else 20 }} arquivos no lote, máximo de 100 MB por requisição. Arquivos processados localmente. A prévia do arquivo original aparece abaixo.</small>
+<small>Até {{ 3 if cloud_mode else 20 }} arquivos no lote, máximo de 100 MB por requisição. Arquivos processados no servidor. A prévia do arquivo original aparece abaixo.</small>
 <audio id="media-tools-preview" controls style="width:100%;margin-top:10px"></audio>
 <p id="media-tools-status" role="status" class="muted"></p>
 </form></div><div class="tool-panel" id="tool-panel-video" role="tabpanel" aria-labelledby="tab-video" hidden><div class="tool-category-title"><strong>Vídeo</strong><span>Compacte ou corte vídeos e exporte em MP4.</span></div><form id="video-tools-form" class="media-tools-form" style="margin-top:20px">
@@ -97,7 +97,7 @@
     </section>
     <section class="lower-grid"><div class="section mini-section"><div class="section-heading"><div><div class="eyebrow">REGISTROS</div><h2>Histórico</h2></div><button id="refresh-history" class="text-button">Atualizar ↻</button></div><div id="history-list" class="history-list"><span class="muted">Carregando histórico...</span></div></div>
     <div class="section mini-section"><div class="section-heading"><div><div class="eyebrow">REDE</div><h2>Conexão e desempenho</h2></div><button id="refresh-connection" class="text-button">Atualizar ↻</button></div><div id="connection-list" class="diagnostic-list"><span class="muted">Verificando conexão...</span></div><details class="technical-details"><summary>Detalhes técnicos</summary><div id="diagnostic-list" class="diagnostic-list"><span class="muted">Verificando dependências...</span></div><button id="refresh-diagnostics" class="text-button">Verificar dependências ↻</button></details></div></section>
-    <footer><span>GrooveCatch Cloud · v1.11.1</span><span>Use somente conteúdos que você tenha direito de baixar e respeite os termos das plataformas.</span></footer>
+    <section class="identity-section" aria-labelledby="identity-title"><div class="eyebrow">NOSSA IDENTIDADE</div><h2 id="identity-title">Sobre o GrooveCatch</h2><p>Um projeto independente que reúne ferramentas de áudio, vídeo e conversão em uma experiência acessível pelo navegador.</p><p><strong>Desenvolvimento:</strong> {{ developer_name }}</p><div class="identity-links"><a href="/sobre">Conheça o projeto</a><a href="/privacidade">Privacidade</a><a href="/termos">Termos de uso</a>{% if contact_email %}<a href="mailto:{{ contact_email }}">Contato</a>{% endif %}</div></section><footer><span>© 2026 GrooveCatch · v1.11.3</span><span>Utilize somente conteúdos para os quais tenha autorização e respeite os termos das plataformas.</span></footer>
     {% with ad=ad_footer %}{% if ad %}<aside class="network-ad" aria-label="Publicidade"><span class="network-ad-label">PUBLICIDADE · {{ ad.kind|upper }}</span><div class="network-ad-body">{% if ad.image_url %}<img src="{{ ad.image_url }}" loading="lazy" alt="Imagem publicitária" referrerpolicy="no-referrer">{% endif %}<div><strong>{{ ad.title }}</strong>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}<a href="{{ url_for('advertising.outbound', ad_id=ad.id) }}" rel="sponsored nofollow noopener noreferrer" target="_blank">Conhecer anunciante ↗</a></div></div></aside>{% endif %}{% endwith %}
   </main><script src="/static/js/app.js" defer></script>
 </body></html>

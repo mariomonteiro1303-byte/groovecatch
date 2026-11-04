@@ -1,0 +1,1 @@
+GrooveCatch Web v1.7.1\nNovidades: corte de áudio, extração de áudio de vídeo, normalização loudnorm e conversão de até 20 arquivos em ZIP.\nUso local. Limite de 100 MB por requisição.\n

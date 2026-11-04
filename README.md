@@ -34,3 +34,7 @@ Nota: a disponibilidade de emissoras depende do cadastro no Radio Browser. Não 
 
 ## v1.11.2: Gerenciador de monetização
 Painel em `/admin/ads` para anúncios próprios, afiliados e banners de redes autorizadas, com cadastro, edição, pausa, exclusão, rodízio por posição e contadores simples. Leia `GUIA_MONETIZACAO_MULTICANAL.md`.
+
+
+## v1.11.3
+Acesso público sem Basic Auth, páginas institucionais e identidade configurável. Leia GUIA_V1_11_3.md.
