@@ -32,21 +32,51 @@ def detect_platform(url):
 class MediaService:
     """Inspeciona URLs públicas e apresenta somente opções coerentes com a mídia."""
 
+    
     def _options(self, cookie_browser=None):
+        """
+        Configura o yt-dlp para identificar mídias.
+
+        Habilita o Deno para processamento JavaScript e
+        mantém os avisos disponíveis para diagnóstico.
+        """
+        import os
+
         options = {
             "quiet": True,
-            "no_warnings": True,
+            "no_warnings": False,
             "noplaylist": True,
             "ignoreerrors": False,
             "skip_download": True,
-        }
-        if cookie_browser:
-            browser = str(cookie_browser).strip().lower()
-            if browser not in {"chrome", "edge", "firefox", "brave", "opera", "vivaldi"}:
-                raise ValueError("Navegador não suportado para sessão local.")
-            options["cookiesfrombrowser"] = (browser,)
-        return options
 
+            # Runtime JavaScript usado pelo yt-dlp.
+            "js_runtimes": {
+                "deno": {}
+            },
+        }
+
+        # Cookies de navegadores locais não devem ser
+        # utilizados no ambiente de nuvem.
+        if cookie_browser:
+            if os.environ.get("GROOVECATCH_CLOUD") == "1":
+                raise ValueError(
+                    "Cookies de navegador local não estão disponíveis na nuvem."
+                )
+
+            browser = str(cookie_browser).strip().lower()
+
+            if browser not in {
+                "chrome", "edge", "firefox",
+                "brave", "opera", "vivaldi"
+            }:
+                raise ValueError(
+                    "Navegador não suportado para sessão local."
+                )
+
+            options["cookiesfrombrowser"] = (browser,)
+
+        return options
+    
     def inspect(self, url, cookie_browser=None):
         """Obtém metadados e detecta se há streams de áudio e/ou vídeo."""
         try:
