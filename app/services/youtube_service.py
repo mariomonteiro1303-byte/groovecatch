@@ -35,7 +35,22 @@ class YouTubeService:
     """Encapsula pesquisa, inspeção e transferência via yt-dlp."""
     def _base_options(self, cookie_browser=None):
         """Monta opções comuns. Cookies só são usados quando o usuário escolhe explicitamente um navegador."""
-        options = {"quiet": True, "no_warnings": True, "noplaylist": True, "ignoreerrors": False}
+        #options = {"quiet": True, "no_warnings": True, "noplaylist": True, "ignoreerrors": False}
+        
+        options = {
+                    "quiet": True,
+                    # Permite visualizar avisos úteis nos logs do Render.
+                    "no_warnings": False,
+                    "noplaylist": True,
+                    "ignoreerrors": False,
+
+                    # Habilita explicitamente o Deno para os extratores
+                    # que precisam executar JavaScript.
+                    "js_runtimes": {
+                        "deno": {}
+                     },
+        }
+
         if cookie_browser and os.environ.get("GROOVECATCH_CLOUD") != "1":
             browser = str(cookie_browser).strip().lower()
             if browser not in {"chrome", "edge", "firefox", "brave", "opera", "vivaldi"}:
