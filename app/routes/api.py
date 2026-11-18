@@ -6,11 +6,23 @@ from app.services.connection_service import connection_status
 from app.services.input_resolver import InputResolver
 from app.services.match_service import MatchService
 from app.services.youtube_service import YouTubeService, YouTubeAuthRequired
+from app.services.youtube_policy import YouTubeRemoteError, remaining_cooldown, check_youtube_cooldown
 from app.services.media_service import SUPPORTED_FORMATS
 from app.jobs.manager import job_manager
 from app.repositories.history import HistoryRepository
 
 bp = Blueprint("api", __name__)
+
+
+def youtube_error_response(exc):
+    """Não envia ao navegador a exceção bruta do extrator ou credenciais."""
+    response = jsonify({"error": str(exc), "code": exc.code})
+    response.status_code = exc.http_status
+    wait = remaining_cooldown()
+    if wait:
+        response.headers["Retry-After"] = str(wait)
+    return response
+
 
 
 def cloud_cookie_browser(value):
@@ -56,8 +68,10 @@ def resolve_input():
             validate_cloud_url(value)
         cookie_browser = cloud_cookie_browser((payload.get("cookie_browser") or "").strip().lower() or None)
         return jsonify(InputResolver().resolve(value, current_app.config["STORAGE_DIR"], cookie_browser=cookie_browser))
+    except YouTubeRemoteError as exc:
+        return youtube_error_response(exc)
     except YouTubeAuthRequired as exc:
-        return jsonify({"error": str(exc), "code": exc.code, "technical_detail": exc.technical_detail,
+        return jsonify({"error": str(exc), "code": exc.code,
                         "browsers": ["chrome", "edge", "firefox", "brave"]}), 401
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
@@ -72,8 +86,10 @@ def spotify_match():
     try:
         candidates = MatchService(current_app.config["STORAGE_DIR"]).candidates(track, limit=1, cookie_browser=cookie_browser)
         return jsonify({"candidates": candidates})
+    except YouTubeRemoteError as exc:
+        return youtube_error_response(exc)
     except YouTubeAuthRequired as exc:
-        return jsonify({"error": str(exc), "code": exc.code, "technical_detail": exc.technical_detail, "browsers": ["chrome","edge","firefox","brave"]}), 401
+        return jsonify({"error": str(exc), "code": exc.code, "browsers": ["chrome","edge","firefox","brave"]}), 401
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
@@ -156,6 +172,10 @@ def start_download():
         return jsonify({"error": str(exc)}), 400
     if media_format not in SUPPORTED_FORMATS:
         return jsonify({"error": f"Formato inválido: {', '.join(sorted(SUPPORTED_FORMATS))}"}), 400
+    try:
+        check_youtube_cooldown(url)
+    except YouTubeRemoteError as exc:
+        return youtube_error_response(exc)
     if current_app.config.get("CLOUD_MODE") and job_manager.active_count() >= 2:
         return jsonify({"error": "Fila cheia. Aguarde a conclusão de uma tarefa."}), 429
     job = job_manager.submit_download(url, title, current_app.config["STORAGE_DIR"],
@@ -224,8 +244,10 @@ def create_preview():
         path = YouTubeService().create_preview(url, current_app.config["STORAGE_DIR"], cookie_browser=cookie_browser)
         file_path = Path(path)
         return jsonify({"preview_url": f"/api/preview/file/{file_path.name}"})
+    except YouTubeRemoteError as exc:
+        return youtube_error_response(exc)
     except YouTubeAuthRequired as exc:
-        return jsonify({"error": str(exc), "code": exc.code, "technical_detail": exc.technical_detail,
+        return jsonify({"error": str(exc), "code": exc.code,
                         "browsers": ["chrome", "edge", "firefox", "brave"]}), 401
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400

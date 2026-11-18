@@ -6,6 +6,7 @@ implementa contorno de DRM, paywall ou autenticação. Sites podem mudar sem avi
 from urllib.parse import urlparse
 from yt_dlp import YoutubeDL
 from app.services.youtube_service import YouTubeAuthRequired, is_youtube_auth_error
+from app.services.youtube_policy import YtDlpLogger, is_youtube_target, check_youtube_cooldown, map_youtube_error
 
 AUDIO_FORMATS = {"mp3", "m4a", "wav"}
 VIDEO_FORMATS = {"mp4", "webm"}
@@ -32,57 +33,39 @@ def detect_platform(url):
 class MediaService:
     """Inspeciona URLs públicas e apresenta somente opções coerentes com a mídia."""
 
-    
-    def _options(self, cookie_browser=None):
-        """
-        Configura o yt-dlp para identificar mídias.
-
-        Habilita o Deno para processamento JavaScript e
-        mantém os avisos disponíveis para diagnóstico.
-        """
+    def _options(self, cookie_browser=None, target=None):
+        """Configura o yt-dlp com Deno e registros de diagnóstico."""
         import os
-
         options = {
             "quiet": True,
             "no_warnings": False,
             "noplaylist": True,
             "ignoreerrors": False,
             "skip_download": True,
-
-            # Runtime JavaScript usado pelo yt-dlp.
-            "js_runtimes": {
-                "deno": {}
-            },
+            "js_runtimes": {"deno": {}},
+            "logger": YtDlpLogger(for_youtube=is_youtube_target(target)),
+            "extractor_retries": 0,
         }
-
-        # Cookies de navegadores locais não devem ser
-        # utilizados no ambiente de nuvem.
         if cookie_browser:
             if os.environ.get("GROOVECATCH_CLOUD") == "1":
-                raise ValueError(
-                    "Cookies de navegador local não estão disponíveis na nuvem."
-                )
-
+                raise ValueError("Cookies de navegador local não estão disponíveis na nuvem.")
             browser = str(cookie_browser).strip().lower()
-
-            if browser not in {
-                "chrome", "edge", "firefox",
-                "brave", "opera", "vivaldi"
-            }:
-                raise ValueError(
-                    "Navegador não suportado para sessão local."
-                )
-
+            if browser not in {"chrome", "edge", "firefox", "brave", "opera", "vivaldi"}:
+                raise ValueError("Navegador não suportado para sessão local.")
             options["cookiesfrombrowser"] = (browser,)
-
         return options
-    
+
     def inspect(self, url, cookie_browser=None):
         """Obtém metadados e detecta se há streams de áudio e/ou vídeo."""
+        check_youtube_cooldown(url)
+        options = self._options(cookie_browser, target=url)
         try:
-            with YoutubeDL(self._options(cookie_browser)) as ydl:
+            with YoutubeDL(options) as ydl:
                 info = ydl.extract_info(url, download=False)
         except Exception as exc:
+            mapped = map_youtube_error(exc, options["logger"], url)
+            if mapped:
+                raise mapped from exc
             if is_youtube_auth_error(exc):
                 raise YouTubeAuthRequired(str(exc)) from exc
             raise

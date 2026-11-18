@@ -4,7 +4,7 @@ from app.services.spotify_service import SpotifyService
 from app.services.media_service import MediaService
 from app.services.youtube_service import YouTubeService
 from app.services.match_service import MatchService
-from app.services.youtube_playlist_service import playlist_id, load_playlist
+from app.services.youtube_playlist_service import playlist_id, load_playlist, youtube_video_id
 
 
 class InputResolver:
@@ -28,7 +28,15 @@ class InputResolver:
                     "item_type": spotify["item_type"], "collection_title": spotify.get("title") or "Coleção Spotify",
                     "collection_thumbnail": spotify.get("thumbnail") or "", "lazy_matching": spotify["item_type"] != "track"}
 
-        # Links com v= e list= representam uma playlist. O usuário poderá optar pelo vídeo isolado.
+        # Um vídeo com &list= continua sendo um vídeo. Isso inclui mixes RD/RDMM.
+        # Retira parâmetros de playlist apenas para a identificação individual.
+        video_id = youtube_video_id(value)
+        if video_id:
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            media = MediaService().inspect(video_url, cookie_browser=cookie_browser)
+            return {"kind": "media_url", "media": media, "message": "YouTube identificado."}
+
+        # Apenas URLs de coleção sem um vídeo explícito seguem para playlists.
         if playlist_id(value):
             return load_playlist(value, cookie_browser=cookie_browser)
 
