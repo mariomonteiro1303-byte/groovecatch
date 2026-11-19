@@ -4,9 +4,10 @@ import os
 import shutil
 from pathlib import Path
 from yt_dlp import YoutubeDL
+from app.services.youtube_policy import YtDlpLogger, check_youtube_cooldown, map_youtube_error
 
 SUPPORTED_FORMATS = {"mp3", "mp4", "wav", "m4a", "webm"}
-AUTH_MARKERS = ("sign in to confirm you’re not a bot", "sign in to confirm you're not a bot", "use --cookies-from-browser", "authentication", "http error 403", "403: forbidden")
+AUTH_MARKERS = ("sign in to confirm you’re not a bot", "sign in to confirm you're not a bot", "use --cookies-from-browser", "authentication")
 
 
 def sanitize_filename(value):
@@ -35,22 +36,7 @@ class YouTubeService:
     """Encapsula pesquisa, inspeção e transferência via yt-dlp."""
     def _base_options(self, cookie_browser=None):
         """Monta opções comuns. Cookies só são usados quando o usuário escolhe explicitamente um navegador."""
-        #options = {"quiet": True, "no_warnings": True, "noplaylist": True, "ignoreerrors": False}
-        
-        options = {
-                    "quiet": True,
-                    # Permite visualizar avisos úteis nos logs do Render.
-                    "no_warnings": False,
-                    "noplaylist": True,
-                    "ignoreerrors": False,
-
-                    # Habilita explicitamente o Deno para os extratores
-                    # que precisam executar JavaScript.
-                    "js_runtimes": {
-                        "deno": {}
-                     },
-        }
-
+        options = {"quiet": True, "no_warnings": False, "noplaylist": True, "ignoreerrors": False, "js_runtimes": {"deno": {}}, "logger": YtDlpLogger(), "extractor_retries": 0}
         if cookie_browser and os.environ.get("GROOVECATCH_CLOUD") != "1":
             browser = str(cookie_browser).strip().lower()
             if browser not in {"chrome", "edge", "firefox", "brave", "opera", "vivaldi"}:
@@ -58,19 +44,24 @@ class YouTubeService:
             options["cookiesfrombrowser"] = (browser,)
         return options
 
-    def _raise_friendly(self, exc):
-        """Converte o bloqueio conhecido em erro tratável e preserva outros erros reais."""
+    def _raise_friendly(self, exc, target, logger):
+        """Classifica recusas externas antes do tratamento de autenticação."""
+        mapped = map_youtube_error(exc, logger, target)
+        if mapped:
+            raise mapped from exc
         if is_youtube_auth_error(exc):
             raise YouTubeAuthRequired(str(exc)) from exc
         raise exc
 
     def get_info(self, url, cookie_browser=None):
         """Lê metadados sem baixar; pode usar sessão local somente após autorização explícita."""
+        check_youtube_cooldown(url)
+        options = {**self._base_options(cookie_browser), "skip_download": True}
         try:
-            with YoutubeDL({**self._base_options(cookie_browser), "skip_download": True}) as ydl:
+            with YoutubeDL(options) as ydl:
                 info = ydl.extract_info(url, download=False)
         except Exception as exc:
-            self._raise_friendly(exc)
+            self._raise_friendly(exc, url, options["logger"])
         if not info:
             raise RuntimeError("Não foi possível obter metadados desse link.")
         return {"title": info.get("title") or "Mídia sem título", "url": info.get("webpage_url") or url,
@@ -79,11 +70,14 @@ class YouTubeService:
 
     def search(self, query, limit=6, cookie_browser=None):
         """Pesquisa candidatos incluindo thumbnail real retornada pelo YouTube."""
+        target = f"ytsearch{max(1, min(int(limit), 10))}:{query}"
+        check_youtube_cooldown(target)
+        options = {**self._base_options(cookie_browser), "extract_flat": True, "skip_download": True}
         try:
-            with YoutubeDL({**self._base_options(cookie_browser), "extract_flat": True, "skip_download": True}) as ydl:
-                result = ydl.extract_info(f"ytsearch{max(1, min(int(limit), 10))}:{query}", download=False)
+            with YoutubeDL(options) as ydl:
+                result = ydl.extract_info(target, download=False)
         except Exception as exc:
-            self._raise_friendly(exc)
+            self._raise_friendly(exc, target, options["logger"])
         candidates = []
         for item in (result or {}).get("entries", []) or []:
             if not item:
@@ -109,6 +103,7 @@ class YouTubeService:
         final = output_dir / f"{key}.mp3"
         if final.is_file() and final.stat().st_size > 0:
             return str(final)
+        check_youtube_cooldown(url)
         options = {**self._base_options(cookie_browser),
                    "format": "bestaudio/best",
                    "outtmpl": str(output_dir / f"{key}.%(ext)s"),
@@ -120,7 +115,7 @@ class YouTubeService:
             with YoutubeDL(options) as ydl:
                 ydl.download([url])
         except Exception as exc:
-            self._raise_friendly(exc)
+            self._raise_friendly(exc, url, options["logger"])
         if final.is_file() and final.stat().st_size > 0:
             return str(final)
         matches = list(output_dir.glob(f"{key}*.mp3"))
@@ -137,6 +132,7 @@ class YouTubeService:
             raise RuntimeError("FFmpeg não foi encontrado no PATH. Instale FFmpeg e reinicie o terminal.")
         output_dir = Path(output_dir).resolve(); output_dir.mkdir(parents=True, exist_ok=True)
         safe_title = sanitize_filename(title)
+        check_youtube_cooldown(url)
         options = {**self._base_options(cookie_browser), "outtmpl": str(output_dir / f"{safe_title}.%(ext)s"),
                    "progress_hooks": [progress_hook] if progress_hook else [], "windowsfilenames": True,
                    "overwrites": False, "continuedl": True,
@@ -153,7 +149,7 @@ class YouTubeService:
             with YoutubeDL(options) as ydl:
                 ydl.download([url])
         except Exception as exc:
-            self._raise_friendly(exc)
+            self._raise_friendly(exc, url, options["logger"])
         candidates = [p for p in output_dir.glob(f"{safe_title}.*") if p.is_file() and p.stat().st_size > 0
                       and p.suffix.lower() in {".mp3", ".mp4", ".wav", ".m4a", ".webm"}]
         exact = output_dir / f"{safe_title}.{media_format}"

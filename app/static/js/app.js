@@ -1,4 +1,4 @@
-/* GrooveCatch Web v1.6.0: busca universal, conexão/desempenho e base da central multimídia. */
+/* GrooveCatch v1.11.4: busca universal, conexão/desempenho e base da central multimídia. */
 let authorizedCookieBrowser = null;
 const $ = (selector) => document.querySelector(selector);
 
