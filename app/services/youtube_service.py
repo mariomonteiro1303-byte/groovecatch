@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 from yt_dlp import YoutubeDL
-from app.services.youtube_policy import YtDlpLogger, check_youtube_cooldown, map_youtube_error
+from app.services.youtube_policy import YtDlpLogger, is_youtube_target, check_youtube_cooldown, map_youtube_error
 
 SUPPORTED_FORMATS = {"mp3", "mp4", "wav", "m4a", "webm"}
 AUTH_MARKERS = ("sign in to confirm you’re not a bot", "sign in to confirm you're not a bot", "use --cookies-from-browser", "authentication")
@@ -34,9 +34,9 @@ class YouTubeAuthRequired(RuntimeError):
 
 class YouTubeService:
     """Encapsula pesquisa, inspeção e transferência via yt-dlp."""
-    def _base_options(self, cookie_browser=None):
+    def _base_options(self, cookie_browser=None, target=None):
         """Monta opções comuns. Cookies só são usados quando o usuário escolhe explicitamente um navegador."""
-        options = {"quiet": True, "no_warnings": False, "noplaylist": True, "ignoreerrors": False, "js_runtimes": {"deno": {}}, "logger": YtDlpLogger(), "extractor_retries": 0}
+        options = {"quiet": True, "no_warnings": False, "noplaylist": True, "ignoreerrors": False, "js_runtimes": {"deno": {}}, "logger":  YtDlpLogger(for_youtube=is_youtube_target(target))}
         if cookie_browser and os.environ.get("GROOVECATCH_CLOUD") != "1":
             browser = str(cookie_browser).strip().lower()
             if browser not in {"chrome", "edge", "firefox", "brave", "opera", "vivaldi"}:
@@ -55,8 +55,9 @@ class YouTubeService:
 
     def get_info(self, url, cookie_browser=None):
         """Lê metadados sem baixar; pode usar sessão local somente após autorização explícita."""
+        target = url
         check_youtube_cooldown(url)
-        options = {**self._base_options(cookie_browser), "skip_download": True}
+        options = {**self._base_options(cookie_browser, target=url), "skip_download": True}
         try:
             with YoutubeDL(options) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -70,7 +71,8 @@ class YouTubeService:
 
     def search(self, query, limit=6, cookie_browser=None):
         """Pesquisa candidatos incluindo thumbnail real retornada pelo YouTube."""
-        target = f"ytsearch{max(1, min(int(limit), 10))}:{query}"
+        """target = f"ytsearch{max(1, min(int(limit), 10))}:{query}"""
+        target = target
         check_youtube_cooldown(target)
         options = {**self._base_options(cookie_browser), "extract_flat": True, "skip_download": True}
         try:
@@ -95,6 +97,7 @@ class YouTubeService:
 
     def create_preview(self, url, output_dir, cookie_browser=None, seconds=30):
         """Gera uma prévia curta em MP3. Usa download parcial quando o extrator/FFmpeg permitem."""
+        target = target
         import hashlib
         from yt_dlp.utils import download_range_func
         output_dir = Path(output_dir).resolve() / "previews"
@@ -125,6 +128,7 @@ class YouTubeService:
 
     def download_media(self, url, title, output_dir, media_format="mp3", progress_hook=None, cookie_browser=None):
         """Baixa mídia e confirma fisicamente o arquivo final."""
+        target = target
         media_format = (media_format or "mp3").lower()
         if media_format not in SUPPORTED_FORMATS:
             raise ValueError(f"Formato não suportado: {media_format}")
@@ -133,7 +137,7 @@ class YouTubeService:
         output_dir = Path(output_dir).resolve(); output_dir.mkdir(parents=True, exist_ok=True)
         safe_title = sanitize_filename(title)
         check_youtube_cooldown(url)
-        options = {**self._base_options(cookie_browser), "outtmpl": str(output_dir / f"{safe_title}.%(ext)s"),
+        options = {**self._base_options(cookie_browser, target = url), "outtmpl": str(output_dir / f"{safe_title}.%(ext)s"),
                    "progress_hooks": [progress_hook] if progress_hook else [], "windowsfilenames": True,
                    "overwrites": False, "continuedl": True,
                    "format": "bestvideo+bestaudio/best" if media_format == "mp4" else "bestaudio/best"}
