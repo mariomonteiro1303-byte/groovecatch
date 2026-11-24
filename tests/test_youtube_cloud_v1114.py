@@ -62,6 +62,7 @@ def test_429_triggers_cloud_cooldown(monkeypatch):
     monkeypatch.setattr(policy, "_BLOCKED_UNTIL", 0.0)
     logger = YtDlpLogger()
     logger.warning(f"[youtube] {VIDEO}: HTTP Error 429: Too Many Requests")
+    assert remaining_cooldown() == 0
     mapped = map_youtube_error(RuntimeError("Failed to extract any player response"), logger,
                                f"https://youtu.be/{VIDEO}")
     assert isinstance(mapped, YouTubeRateLimited)
