@@ -200,9 +200,10 @@ class JobManager:
 
     def _run_download(self, job_id, url, title, output_dir, database_path, media_format, metadata):
         """Lê metadados reais antes do nome final, baixa e verifica o arquivo."""
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = Path(output_dir).resolve()
+        job_dir = output_dir / "downloads" / job_id
         flag = self.cancel_flags[job_id]
+        completed = False
         self._update(job_id, status="running", message="Lendo metadados da mídia")
         try:
             cookie_browser = metadata.get("cookie_browser")
@@ -234,7 +235,7 @@ class JobManager:
                     self._update(job_id, progress=99, message="Convertendo e validando arquivo final")
 
             self._update(job_id, message="Baixando mídia")
-            output = self.youtube.download_media(url, title, output_dir, media_format, progress_hook, cookie_browser=cookie_browser)
+            output = self.youtube.download_media(url, title, job_dir, media_format, progress_hook, cookie_browser=cookie_browser)
             path = Path(output)
             if flag.is_set():
                 self._update(job_id, status="cancelled", message="Download cancelado", progress=0)
@@ -249,6 +250,7 @@ class JobManager:
                 except Exception:
                     pass  # Falha no cache não invalida um download que foi concluído corretamente.
             self._update(job_id, status="completed", progress=100, message="Download concluído e arquivo validado", file=str(path))
+            completed = True
         except YouTubeAuthRequired as exc:
             self._update(job_id, status="failed", message="O YouTube solicitou autenticação", error=str(exc),
                          error_code=exc.code, technical_detail=exc.technical_detail)
@@ -256,6 +258,9 @@ class JobManager:
             self._update(job_id, status="cancelled", message=str(exc), error=None)
         except Exception as exc:
             self._update(job_id, status="failed", message="Falha no download", error=str(exc))
+        finally:
+            if not completed:
+                shutil.rmtree(job_dir, ignore_errors=True)
 
     def get(self, job_id):
         """Retorna uma cópia do estado para impedir alterações externas."""

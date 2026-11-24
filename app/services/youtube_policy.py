@@ -81,7 +81,7 @@ def check_youtube_cooldown(value):
 
 
 class YtDlpLogger:
-    """Captura avisos do extrator e registra evidências HTTP 429/403."""
+    """Captura evidências HTTP 429/403 para classificar uma eventual falha."""
 
     def __init__(self, for_youtube=True):
         self.for_youtube = for_youtube
@@ -93,7 +93,6 @@ class YtDlpLogger:
         lowered = message.lower()
         if self.for_youtube and ("http error 429" in lowered or "too many requests" in lowered):
             self.saw_429 = True
-            record_youtube_429()
         if self.for_youtube and ("http error 403" in lowered or "403: forbidden" in lowered):
             self.saw_403 = True
         return message

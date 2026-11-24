@@ -6,6 +6,7 @@ import re
 import os
 import shutil
 import hashlib
+from glob import escape
 from pathlib import Path
 
 from yt_dlp import YoutubeDL
@@ -59,6 +60,10 @@ def is_youtube_auth_error(exc):
         "youtube" in text
         and any(marker in text for marker in AUTH_MARKERS)
     )
+
+
+def _output_template(stem):
+    return str(stem).replace("%", "%%") + ".%(ext)s"
 
 
 class YouTubeAuthRequired(RuntimeError):
@@ -321,9 +326,7 @@ class YouTubeService:
 
             "format": "bestaudio/best",
 
-            "outtmpl": str(
-                output_dir / f"{key}.%(ext)s"
-            ),
+            "outtmpl": _output_template(output_dir / key),
 
             # Limita a duração da prévia entre 5 e 45 segundos.
             "download_ranges": download_range_func(
@@ -423,9 +426,7 @@ class YouTubeService:
                 target=url,
             ),
 
-            "outtmpl": str(
-                output_dir / f"{safe_title}.%(ext)s"
-            ),
+            "outtmpl": _output_template(output_dir / safe_title),
 
             "progress_hooks": (
                 [progress_hook] if progress_hook else []
@@ -490,7 +491,7 @@ class YouTubeService:
         # Identifica arquivos efetivamente gerados.
         candidates = [
             path
-            for path in output_dir.glob(f"{safe_title}.*")
+            for path in output_dir.glob(f"{escape(safe_title)}.*")
             if (
                 path.is_file()
                 and path.stat().st_size > 0
